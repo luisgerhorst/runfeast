@@ -17,42 +17,70 @@ def main():
     main = range(0, nr_groups)
     main_struct = structure(main)
     main_cookers = set(cookers(main))
+
+    opt_sim = nr_groups
+    opt_eim = nr_groups
+    opt_seci = nr_groups
+    opt_meci = nr_groups
+    opt_smci = nr_groups
+    opt_meetsum = 0
+    opt_meetmin = 0
+    opt_meetmax = 0
+    opt_sis = nr_groups*nr_groups
+    opt_eis = nr_groups*nr_groups
+
     for start in itertools.permutations(range(0, nr_groups)):
 
         start_cookers = set(cookers(start))
         start_struct = structure(start)
-        if len(main_cookers.intersection(start_cookers)) >= 1:
+
+        smci = len(main_cookers.intersection(start_cookers))
+        if smci > opt_smci:
             continue;
 
-        start_i_sum, start_i_max = check_intersect(main_struct, start_struct)
-        if start_i_max == size:
+        sis, sim = check_intersect(main_struct, start_struct)
+        if not (sim <= opt_sim):
+            continue
+        if sis > opt_sis:
             continue
 
         for end in itertools.permutations(range(0, nr_groups)):
             end_cookers = set(cookers(end))
-            if len(main_cookers.intersection(end_cookers)) >= 1:
-                continue
-            if len(start_cookers.intersection(end_cookers)) >= 2:
-                continue
 
-            eis, eim = check_intersect(main_struct, start_struct)
-            if eim == size:
+            meci = len(main_cookers.intersection(end_cookers))
+            if meci > opt_meci:
                 continue
 
             end_struct = structure(end)
-            meet_min, meet_max, m_sum = meet(start_struct, main_struct, end_struct)
-            if meet_min < nr_groups or m_sum <= 23:
+            eis, eim = check_intersect(main_struct, end_struct)
+            meetmin, meetmax, meetsum = meet(start_struct, main_struct, end_struct)
+            if meetmin < opt_meetmin and meetsum < opt_meetsum or eis > opt_eis and eim > opt_eim:
                 continue
+
+            seci = len(start_cookers.intersection(end_cookers))
+            if seci > max(opt_seci, opt_meci, opt_smci)+1:
+                continue
+
+            opt_smci = smci
+            opt_meci = meci
+            opt_seci = seci
+            opt_sim = sim
+            opt_sis = sis
+            opt_eim = eim
+            opt_eis = eis
+            opt_meetmin = meetmin
+            opt_meetsum = meetsum
+            opt_meetmax = meetmax
 
             print("start:", structure(start))
             print("main:", main_struct)
             print("end:", structure(end))
-            print(start_i_sum, start_i_max, eis, eim, meet_min, meet_max, m_sum)
+            print(smci, meci, sim, eim, sis, eis, meetmin, meetmax, meetsum, seci, sis, eis)
 
 def meet(a, b, c):
     m_min = nr_groups
     m_max = 0
-    m_sum = 0
+    meetsum = 0
     for g in range(0, nr_groups):
         mg = set()
         for m in a:
@@ -66,21 +94,22 @@ def meet(a, b, c):
                 mg.update(m)
         m_min = min(len(mg), m_min)
         m_max = max(len(mg), m_max)
-        m_sum += len(mg)
-    return (m_min, m_max, m_sum)
+        meetsum += len(mg)
+    return (m_min, m_max, meetsum)
 
 
 def check_intersect(main_struct, start_struct):
-    start_i_sum = 0
-    start_i_max = 0
+    "How many different are the groups between the two rounds. sum/max are better if lower."
+    sis = 0
+    sim = 0
     for m in main_struct:
         main_set = set(m)
         for s in start_struct:
             start_set = set(s)
             i = len(main_set.intersection(start_set))
-            start_i_sum += i
-            start_i_max = max(start_i_max, i)
-    return (start_i_sum, start_i_max)
+            sis += i
+            sim = max(sim, i)
+    return (sis, sim)
 
 def structure(l):
     s = []
@@ -100,8 +129,8 @@ def structure(l):
 
 def cookers(l):
     s = []
-    for g in range(0, len(l), 3):
-        s += [l[g]]
+    for g in structure(l):
+        s += [g[0]]
     return s
 
 
