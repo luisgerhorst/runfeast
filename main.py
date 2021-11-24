@@ -10,7 +10,7 @@ from io import StringIO
 import random
 import itertools
 
-nr_groups = 5
+nr_groups = 8
 size = 3
 
 def main():
@@ -29,7 +29,12 @@ def main():
     opt_sis = nr_groups*nr_groups
     opt_eis = nr_groups*nr_groups
 
-    for start in itertools.permutations(range(0, nr_groups)):
+    ep = list(itertools.permutations(range(0, nr_groups)))
+    random.shuffle(ep)
+    sp = list(itertools.permutations(range(0, nr_groups)))
+    random.shuffle(sp)
+
+    for start in sp:
 
         start_cookers = set(cookers(start))
         start_struct = structure(start)
@@ -44,7 +49,7 @@ def main():
         if sis > opt_sis:
             continue
 
-        for end in itertools.permutations(range(0, nr_groups)):
+        for end in ep:
             end_cookers = set(cookers(end))
 
             meci = len(main_cookers.intersection(end_cookers))
@@ -54,11 +59,8 @@ def main():
             end_struct = structure(end)
             eis, eim = check_intersect(main_struct, end_struct)
             meetmin, meetmax, meetsum = meet(start_struct, main_struct, end_struct)
-            if meetmin < opt_meetmin and meetsum < opt_meetsum or eis > opt_eis and eim > opt_eim:
-                continue
-
             seci = len(start_cookers.intersection(end_cookers))
-            if seci > max(opt_seci, opt_meci, opt_smci)+1:
+            if not (((meetmin > opt_meetmin or meetmin == opt_meetmin and meetsum >= opt_meetsum) or eis < opt_eis or eim < opt_eim) and seci <= max(opt_seci, opt_meci, opt_smci)):
                 continue
 
             opt_smci = smci
